@@ -1,0 +1,1 @@
+Backend for shoping list project
