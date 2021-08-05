@@ -9,7 +9,7 @@ const routerList = require('./routers/list.router')
 const routerChat = require('./routers/chat.router')
 const http = require("http");
 const WebSocket = require('ws')
-const chatController = require('./controllers/chat.controller')
+const WSController = require('./controllers/webSocket.controller')
 
 const PORT = process.env.PORT || 5000
 const app = express()
@@ -25,9 +25,11 @@ app.use('/api/chat', routerChat)
 const wss = new WebSocket.Server({ server, clientTracking : true });
 
 wss.on('connection', (ws) => {
+  ws.on('message', (m)=> console.log(JSON.parse(m)))
+
   try {
-    chatController.onMessage(ws, wss)
-    chatController.onClose(ws)
+    WSController.onMessage(ws, wss)
+    WSController.onClose(ws)
   } catch (error) {
   }
 })

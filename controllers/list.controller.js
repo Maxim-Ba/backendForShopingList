@@ -38,10 +38,14 @@ class ListController {
   }
   async saveList(req, res) {
     try {
+      console.log(req.body)
+
       const { name, color, _id, groups, deleted } = req.body;
       const sevedLists = await List.findOneAndUpdate(
         {_id:_id}, {name, color, groups, deleted}, {new:true}
       )
+      console.log(sevedLists)
+
       return res.json(sevedLists)
     } catch (error) {
       console.log(error)
