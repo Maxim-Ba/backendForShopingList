@@ -1,15 +1,26 @@
 const ChatModel = require("../models/Chats");
-const ListModel = require("../models/List");
 const UserModel = require("../models/User");
 
 const WSServise = require("../services/webSoket.servise")
 
-class Chat {
+class WebsocketController {
   async onMessage(ws, wss) {
     ws.on("message", async (m) => {
       const mesData = JSON.parse(m);
       console.log(mesData, 'onMessage const mesData' );
       switch (mesData.event) {
+        case "connection":
+          wss.clients.forEach((client) => {
+            if (client === ws ) {
+              client.send(
+                JSON.stringify({
+                  event: "wellDone",
+                })
+              );
+            }
+            
+          });
+          break;
         case "updateChat":
           const messagesInDB = await ChatModel.findOne({
             list: mesData.listID,
@@ -37,23 +48,60 @@ class Chat {
           break;
         case "updateUser":
           // добовление или удаления из чата-списка user
+          const usersList = await WSServise.updateUser(mesData.listID, mesData.userEmail)
+          const users = await UserModel.find({ _id: usersList }).select({
+            email: true,
+            _id: true,
+          });
+          console.log(users, "users updateUser")
+          console.log(mesData.listID, "mesData.listID")
           wss.clients.forEach((client) => {
-            if ((client.listID === mesData.listID) ) {
+            console.log(client.listID, "client.listID")
+            console.log(client.userID, "client.userID")
+
+            if ((client.listID === mesData.listID || client.userID === users[users.length-1] ) ) {
               client.send(
                 JSON.stringify({
                   event: "updateUser",
-                  users: sevedMessages.users,
+                  users: users,
                 })
               );
             }
+            if (client.userID === users[users.length-1]) {
+              async ()=> {
+                const newListThatWasShared = await WSServise.getNewListThatWasShared(ws.userID, client.userID)
+                client.send(
+                  JSON.stringify({
+                    event: "sharedList",
+                    newListThatWasShared: newListThatWasShared,
+                  })
+                );
+
+              }
+              
+            }
           });
           break;
+          // case "shareToMeList":
+          //   // изменить имя
+          //   wss.clients.forEach((client) => {
+          //     if (client.listID === mesData.listID) {
+          //       client.send(
+          //         JSON.stringify({
+          //           event: "shareToMeList",
+          //           color: sevedMessages.color,
+          //         })
+          //       );
+          //     }
+          //   });
+          //   break;
         case "updateGroups":
           // добовление в список item
           const newGroups = await WSServise.updateGroups(mesData.listID, mesData.groups)
-          console.log(newGroups, '///////updateGroups/////////' );
           wss.clients.forEach((client) => {
-            if ((client.listID === mesData.listID) && (client.userID !== mesData.userID) ) {
+            if ((client.listID === mesData.listID) 
+            // && (client.userID !== mesData.userID)
+            ) {
               client.send(
                 JSON.stringify({
                   event: "updateGroups",
@@ -66,7 +114,9 @@ class Chat {
         case "updateDeletedAndGroups":
           const {groups, deleted} = await WSServise.updateDeletedAndGroups(mesData.listID, mesData.groups, mesData.deleted)      
           wss.clients.forEach((client) => {
-            if (client.listID === mesData.listID && (client.userID !== mesData.userID)) {
+            if ((client.listID === mesData.listID) 
+            // && (client.userID !== mesData.userID)
+            ) {
               client.send(
                 JSON.stringify({
                   event: "updateDeletedAndGroups",
@@ -141,4 +191,4 @@ class Chat {
     }
   }
 }
-module.exports = new Chat();
+module.exports = new WebsocketController();

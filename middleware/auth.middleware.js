@@ -16,6 +16,8 @@ module.exports = (req, res, next) =>{
         req.user = decoded
         next()
   } catch (e) {
+    console.log(e, 'authMiddleware')
+
     return res.status(401).json({ message: e })
   }
 }

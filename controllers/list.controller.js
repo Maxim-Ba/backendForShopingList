@@ -1,5 +1,6 @@
 const List = require("../models/List");
 const Chat = require("../models/Chats");
+const SharedLists = require("../models/SharedLists");
 
 class ListController {
   async getLists(req, res) {
@@ -10,7 +11,7 @@ class ListController {
       return res.json(lists)
     } catch (error) {
       console.log(error)
-      return res.status(500).json({ message: "Can not get files" });
+      return res.status(500).json({ message: "Can not get lists" });
     }
   }
   async createList(req, res) {
@@ -38,14 +39,10 @@ class ListController {
   }
   async saveList(req, res) {
     try {
-      console.log(req.body)
-
       const { name, color, _id, groups, deleted } = req.body;
       const sevedLists = await List.findOneAndUpdate(
         {_id:_id}, {name, color, groups, deleted}, {new:true}
       )
-      console.log(sevedLists)
-
       return res.json(sevedLists)
     } catch (error) {
       console.log(error)
@@ -63,11 +60,23 @@ class ListController {
       return res.status(500).json({ message: "Can not get list" });
     }
   }
-  async shareList() {}
+  async getSharedList(req, res) {
+    try {
+      const sharedLists = await SharedLists.findOne({
+        user: req.params.userID,
+      })
+
+      const lists = await List.find({
+        _id: sharedLists,
+      })
+      console.log(lists, 'shared')
+      return res.json(lists)
+    } catch (error) {
+      return res.status(500).json({ message: "Can not get sharedList" });
+    }
+  }
   async deleteList(req, res) {
     try {
-      console.log(req.params.list)
-
       await List.findOneAndDelete({_id: req.params.list})
       await Chat.findOneAndDelete({list: req.params.list})
 

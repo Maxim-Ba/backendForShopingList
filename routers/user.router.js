@@ -6,6 +6,9 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const authMiddleware = require('../middleware/auth.middleware')
 const { check, validationResult } = require('express-validator')
+const List = require('../models/List')
+const Chat = require('../models/Chats')
+const SharedLists = require('../models/SharedLists')
 
 const router = new Router()
 
@@ -17,7 +20,6 @@ router.post('/registration',
       .isLength({ min: 3, max: 16 }),
   ],
   async (req, res) => {
-    console.log(req.body)
     try {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
@@ -31,8 +33,31 @@ router.post('/registration',
       const hashPassword = await bcrypt.hash(password, 8)
       const user = new User({ email, password: hashPassword })
       await user.save()
+      // -------------
+      const newList = new List({
+        name: 'Новый список',
+        color: '#4caf50',
+        userOwener: user._id,
+        users: [user._id],
+      });
+      await newList.save()
+      // ------------
+      const chat = new Chat({
+        name: newList.name,
+        messages: [],
+        list: newList._id,
+        users:[newList.userOwener]
+      });
+      await chat.save();
+      // --------------
+      const sharedList = new SharedLists({
+        user:user._id,
+      });
+      await sharedList.save()
+      // --------------
       return res.json({ message: 'User was created' })
     } catch (error) {
+      console.log(error)
       res.send({ message: 'error on server' })
     }
   })
@@ -61,6 +86,8 @@ router.post('/login',
         }
       })
     } catch (error) {
+      console.log(error)
+
       res.send({ message: 'error on server' })
     }
   })
@@ -85,15 +112,35 @@ router.get('/auth',authMiddleware,
       res.send({ message: 'error on server' })
     }
   })
-  router.put('/password',
+
+  router.put('/changePassword',
+  [
+    check('email', 'NewPassword must be longer than 3 and shoter than 16')
+      .not().isEmpty(),
+      check('password', 'NewPassword must be longer than 3 and shoter than 16')
+      .not().isEmpty(),
+      check('newPassword', 'NewPassword must be longer than 3 and shoter than 16')
+      .isLength({ min: 3, max: 16 }),
+  ],
   async (req, res) => {
     try {
+      const {email, password, newPassword } = req.body
+      const user = await User.findOne({ email })
       
+      const isPasValid = bcrypt.compareSync(password, user.password)
+      if (!isPasValid) {
+        return res.status(406).json({ message: 'Invalid password' })
+      }
+      const hashPassword = await bcrypt.hash(newPassword, 8)
+      const userUpdated = await User.findOneAndUpdate({ _id: user._id }, { password:hashPassword },{ new: true })
+
+      return res.json({
+        message: 'Пароль успешно изменен'
+      })
     } catch (error) {
       res.send({ message: 'error on server' })
     }
   })
-
 
 
 
