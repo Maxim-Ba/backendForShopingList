@@ -7,10 +7,11 @@ class ListController {
     try {
       const lists = await List.find({
         userOwener: req.user.id,
-      })
-      return res.json(lists)
+      });
+
+      return res.json(lists);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       return res.status(500).json({ message: "Can not get lists" });
     }
   }
@@ -29,7 +30,7 @@ class ListController {
         name,
         messages: [],
         list: list._id,
-        users:[userOwener]
+        users: [userOwener],
       });
       await chat.save();
       return res.json(list);
@@ -41,11 +42,13 @@ class ListController {
     try {
       const { name, color, _id, groups, deleted } = req.body;
       const sevedLists = await List.findOneAndUpdate(
-        {_id:_id}, {name, color, groups, deleted}, {new:true}
-      )
-      return res.json(sevedLists)
+        { _id: _id },
+        { name, color, groups, deleted },
+        { new: true }
+      );
+      return res.json(sevedLists);
     } catch (error) {
-      console.log(error)
+      console.log(error);
 
       return res.status(500).json(error);
     }
@@ -54,8 +57,8 @@ class ListController {
     try {
       const list = await List.findOne({
         _id: req.params.list,
-      })
-      return res.json(list)
+      });
+      return res.json(list);
     } catch (error) {
       return res.status(500).json({ message: "Can not get list" });
     }
@@ -64,30 +67,25 @@ class ListController {
     try {
       const sharedLists = await SharedLists.findOne({
         user: req.params.userID,
-      })
-
+      });
       const lists = await List.find({
-        _id: sharedLists,
-      })
-      console.log(lists, 'shared')
-      return res.json(lists)
+        _id: sharedLists.sharedLists,
+      });
+      return res.json(lists);
     } catch (error) {
       return res.status(500).json({ message: "Can not get sharedList" });
     }
   }
   async deleteList(req, res) {
     try {
-      await List.findOneAndDelete({_id: req.params.list})
-      await Chat.findOneAndDelete({list: req.params.list})
-
-      console.log('del')
+      await List.findOneAndDelete({ _id: req.params.list });
+      await Chat.findOneAndDelete({ list: req.params.list });
       const lists = await List.find({
         userOwener: req.user.id,
-      })
-      return res.json(lists)
+      });
+      return res.json(lists);
     } catch (error) {
       return res.status(500).json(error);
-
     }
   }
 }

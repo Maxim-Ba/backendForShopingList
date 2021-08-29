@@ -48,10 +48,8 @@ class WSServise {
       const newSharedList = await SharedLists.findOne({
         user: user._id,
       });
-      console.log(user._id,newSharedList, 'newSharedList updateUser')
       !newSharedList.sharedLists.includes(listID) &&
-        newSharedList.sharedLists.push(user._id);
-      console.log(newSharedList);
+        newSharedList.sharedLists.push(listID);
       await newSharedList.save();
       return list.users;
     } catch (error) {
