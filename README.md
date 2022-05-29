@@ -13,3 +13,5 @@ SECRET_KEY=...
 - DB_URL URL для mongodb
 
 ***
+
+скрипт для запуска сервера npm run dev
